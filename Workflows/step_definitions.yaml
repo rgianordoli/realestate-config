@@ -1,0 +1,77 @@
+steps:
+  - key: import_document
+    effect: provide_document
+    module: internal.steps.import_document
+    implementation: ImportDocument
+    description: |
+      Importiert ein Dokument anhand der document_id und stellt es für die weiteren Schritte bereit.
+      Die Quelle kann z.B. eine Dateidatenbank (GridFS) sein.
+    inputs:
+      document_id: $context.document_id
+
+  - key: pdf_to_images
+    effect: page_images
+    module: internal.steps.pdf_to_images
+    implementation: PdfToImages
+    description: |
+      Wandelt PDF-Seiten in Bilder um.
+    inputs:
+      pdf: provide_document
+
+  - key: detect_rotation_by_text
+    effect: detected_rotations_by_text
+    module: internal.steps.angle_by_text_detector
+    implementation: PageAngleByTextDetector
+    description: |
+      Liefert Winkel zur Bildausrichtung basierend auf erkanntem Text mit OCR.
+    inputs:
+      image: provide_document
+
+  - key: detect_rotation_by_table
+    effect: page_table_detection_with_angle
+    module: internal.steps.angle_by_table_detector
+    implementation: PageAngleByTableDetector
+    description: |
+      Prüft jede Seite auf das Vorhandensein von Tabellenstrukturen anhand von Linienmustern.
+      Gibt ein True/False-Mapping pro Seite zurück inklusive eines Winkels um deskew durchzuführen.
+    inputs:
+      image: provide_document
+      rotations_by_text: detected_rotations_by_text
+
+  - key: table_layout_with_text_extractions
+    effect: extracted_table_layout_with_text
+    module: internal.steps.table_detector
+    implementation: TableLayoutAndTextExtractor
+    description: |
+      Erkennt Tabellenlayouts und extrahiert Text aus Tabellenzellen.
+    inputs:
+      image: provide_document
+      detected_rotations: page_table_detection_with_angle
+
+  - key: table_with_border_reconstructor
+    effect: extract_table_text
+    module: internal.steps.table_with_border_reconstructor
+    implementation: TableWithBorderReconstructor
+    description: |
+      Extrahiert Text aus Tabellenzellen, basierend auf den erkannten Rahmen.
+    inputs:
+      table_layout_and_text: extracted_table_layout_with_text
+
+  - key: extract_text_and_insert_table_markers
+    effect: final_text_with_tables
+    module: internal.steps.extract_text_and_insert_table_markers
+    implementation: PageTextWithTableMarkersExtractor
+    description: |
+      Extrahiert Text aus Bildern und ersetzt Tabellenplatzhalter durch formatierte Tabellen.
+    inputs:
+      extract_table_text: extract_table_text
+
+  # - key: render_debug_overlays
+  #   effect: debug_images_with_annotations
+  #   module: internal.steps.rendering
+  #   implementation: DebugOverlayRenderer
+  #   description: |
+  #     Zeichnet erkannte Tabellen, Textergebnisse und OCR-Boxen auf das Originalbild zur Analyse.
+  #   inputs:
+  #     extract_table_text: extract_table_text
+  #     image: provide_document

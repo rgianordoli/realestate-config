@@ -1,0 +1,13 @@
+workflow:
+  name: extract_text_and_tables_from_pdf
+  description: |
+    Dieser Workflow extrahiert strukturierte Text und Tabellendaten aus einem PDF.
+
+sequence:
+  - import_document
+  - pdf_to_images
+  - detect_rotation_by_text
+  - detect_rotation_by_table
+  - table_layout_with_text_extractions
+  - table_with_border_reconstructor
+  - extract_text_and_insert_table_markers
