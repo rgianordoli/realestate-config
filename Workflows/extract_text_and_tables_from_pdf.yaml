@@ -7,7 +7,5 @@ sequence:
   - import_document
   - pdf_to_images
   - detect_rotation_by_text
-  - detect_rotation_by_table
-  - table_layout_with_text_extractions
-  - table_with_border_reconstructor
+  - detect_tables
   - extract_text_and_insert_table_markers

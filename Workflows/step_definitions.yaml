@@ -27,35 +27,26 @@ steps:
     inputs:
       image: provide_document
 
-  - key: detect_rotation_by_table
-    effect: page_table_detection_with_angle
-    module: internal.steps.angle_by_table_detector
-    implementation: PageAngleByTableDetector
+  - key: detect_tables
+    effect: table_detection
+    module: internal.steps.table_detector
+    implementation: TableDetector
     description: |
-      Prüft jede Seite auf das Vorhandensein von Tabellenstrukturen anhand von Linienmustern.
-      Gibt ein True/False-Mapping pro Seite zurück inklusive eines Winkels um deskew durchzuführen.
+      Erkennt Tabellen unterschiedlicher Typen (mit/ohne Rahmen) und liefert eine Liste extrahierter Tabellen.
+      Unterstützt mehrere Detection-Strategien pro Seite.
     inputs:
       image: provide_document
       rotations_by_text: detected_rotations_by_text
-
-  - key: table_layout_with_text_extractions
-    effect: extracted_table_layout_with_text
-    module: internal.steps.table_detector
-    implementation: TableLayoutAndTextExtractor
-    description: |
-      Erkennt Tabellenlayouts und extrahiert Text aus Tabellenzellen.
-    inputs:
-      image: provide_document
-      detected_rotations: page_table_detection_with_angle
-
-  - key: table_with_border_reconstructor
-    effect: extract_table_text
-    module: internal.steps.table_with_border_reconstructor
-    implementation: TableWithBorderReconstructor
-    description: |
-      Extrahiert Text aus Tabellenzellen, basierend auf den erkannten Rahmen.
-    inputs:
-      table_layout_and_text: extracted_table_layout_with_text
+    config:
+      detection_types:
+        - TABLE_WITH_BORDER
+        # - TABLE_WITHOUT_BORDER (wenn implementiert)
+      type_config:
+        TABLE_WITH_BORDER:
+          row_eps: 50
+          col_eps: 50
+        # TABLE_WITHOUT_BORDER:
+        #   some_param: 123
 
   - key: extract_text_and_insert_table_markers
     effect: final_text_with_tables
